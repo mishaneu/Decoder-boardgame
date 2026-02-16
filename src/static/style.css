@@ -1,0 +1,554 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+    color: #fff;
+    min-height: 100vh;
+}
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Экраны */
+.screen {
+    display: none;
+    width: 100%;
+    max-width: 1400px;
+    padding: 20px;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* Экран входа */
+.login-container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.game-title {
+    font-size: 3em;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 10px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.game-subtitle {
+    text-align: center;
+    color: #aaa;
+    margin-bottom: 30px;
+}
+
+.login-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+    border-radius: 10px;
+    font-size: 1em;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    background: #4ecdc4;
+    color: #1e1e2f;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.input-field {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1em;
+    outline: none;
+}
+
+.input-field::placeholder {
+    color: #888;
+}
+
+.primary-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #4ecdc4;
+    color: #1e1e2f;
+    font-weight: 600;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 10px 0;
+}
+
+.primary-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+}
+
+.primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    padding: 15px 30px;
+    border: 2px solid #4ecdc4;
+    border-radius: 10px;
+    background: transparent;
+    color: #4ecdc4;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.secondary-btn:hover {
+    background: #4ecdc4;
+    color: #1e1e2f;
+}
+
+.error-message {
+    color: #ff6b6b;
+    text-align: center;
+    margin-top: 20px;
+    min-height: 30px;
+}
+
+/* Лобби */
+.lobby-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+}
+
+.room-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.room-header h2 {
+    font-size: 2em;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.teams-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.team-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+}
+
+.team-card h3 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.players-list {
+    min-height: 150px;
+    margin-bottom: 20px;
+}
+
+.player-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-item .encoder-badge {
+    background: #ffd700;
+    color: #1e1e2f;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.join-team-btn {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid currentColor;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.red-team .join-team-btn {
+    color: #ff6b6b;
+}
+
+.blue-team .join-team-btn {
+    color: #4ecdc4;
+}
+
+.join-team-btn:hover {
+    background: currentColor;
+    color: #1e1e2f;
+}
+
+/* Игровой экран */
+.game-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+}
+
+.game-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    margin-bottom: 20px;
+}
+
+.scores {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.score {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.red-score {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+
+.blue-score {
+    background: rgba(78, 205, 196, 0.2);
+    color: #4ecdc4;
+}
+
+.round-info {
+    text-align: right;
+}
+
+.game-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+}
+
+/* Секретные слова */
+.secrets-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.secrets-card h4 {
+    margin-bottom: 10px;
+    color: #aaa;
+}
+
+.words-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    counter-reset: word-counter;
+}
+
+.word-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    counter-increment: word-counter;
+}
+
+.word-item::before {
+    content: counter(word-counter) ". ";
+    font-weight: bold;
+    color: #4ecdc4;
+    margin-right: 5px;
+}
+
+#red-secrets .word-item {
+    border-left: 3px solid #ff6b6b;
+}
+
+#red-secrets .word-item::before {
+    color: #ff6b6b;
+}
+
+#blue-secrets .word-item {
+    border-left: 3px solid #4ecdc4;
+}
+
+#blue-secrets .word-item::before {
+    color: #4ecdc4;
+}
+
+.spectator-note {
+    text-align: center;
+    color: #aaa;
+}
+
+/* Центральная колонка */
+.phase-indicator {
+    text-align: center;
+    padding: 15px;
+    background: rgba(78, 205, 196, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.clues-box {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.clues-display {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.clue-word {
+    background: #4ecdc4;
+    color: #1e1e2f;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-size: 1.3em;
+    font-weight: 600;
+}
+
+.encoder-panel, .guessing-panel, .resolve-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.clue-inputs {
+    display: grid;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.clue-inputs input {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1em;
+}
+
+.guess-inputs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.guess-select {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1.2em;
+    cursor: pointer;
+}
+
+.resolve-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.success-btn, .danger-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.success-btn {
+    background: #4ecdc4;
+    color: #1e1e2f;
+}
+
+.danger-btn {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.success-btn:hover, .danger-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* Лог */
+.log-column {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 15px;
+}
+
+.log-column h4 {
+    margin-bottom: 15px;
+    color: #aaa;
+}
+
+.message-log {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.log-message {
+    padding: 8px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    font-size: 0.9em;
+    border-left: 3px solid #4ecdc4;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .game-main {
+        grid-template-columns: 1fr;
+    }
+
+    .teams-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.history-sidebar {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 15px;
+    margin-top: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.round-history-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.round-header.red {
+    color: #ff6b6b;
+    font-weight: bold;
+}
+
+.round-header.blue {
+    color: #4ecdc4;
+    font-weight: bold;
+}
+
+.my-clues {
+    margin-top: 5px;
+    padding: 5px;
+    background: rgba(78, 205, 196, 0.1);
+    border-radius: 5px;
+}
+
+.enemy-clues {
+    margin-top: 5px;
+    padding: 5px;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 5px;
+}
+
+.clue-label {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-bottom: 3px;
+}
+
+.clues {
+    font-size: 1.1em;
+}
+
+.intercept {
+    margin-top: 5px;
+    color: #ffd700;
+    font-weight: bold;
+}

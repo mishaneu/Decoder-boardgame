@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decrypto - Настольная игра</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <!-- Экран входа / создания комнаты -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <h1 class="game-title">🎲 DECRYPTO</h1>
+                <p class="game-subtitle">Командная игра на ассоциации и дедукцию</p>
+
+                <div class="login-tabs">
+                    <button class="tab-btn active" data-tab="create">Создать комнату</button>
+                    <button class="tab-btn" data-tab="join">Присоединиться</button>
+                </div>
+
+                <div id="create-tab" class="tab-content active">
+                    <input type="text" id="create-nickname" placeholder="Ваш никнейм" class="input-field">
+                    <button id="create-room-btn" class="primary-btn">Создать игру</button>
+                </div>
+
+                <div id="join-tab" class="tab-content">
+                    <input type="text" id="join-room-code" placeholder="Код комнаты" class="input-field" maxlength="6">
+                    <input type="text" id="join-nickname" placeholder="Ваш никнейм" class="input-field">
+                    <button id="join-room-btn" class="primary-btn">Войти в комнату</button>
+                </div>
+
+                <div class="error-message" id="login-error"></div>
+            </div>
+        </div>
+
+        <!-- Экран ожидания в комнате -->
+        <div id="lobby-screen" class="screen">
+            <div class="lobby-container">
+                <div class="room-header">
+                    <h2>Комната: <span id="room-code-display"></span></h2>
+                    <button id="copy-room-code" class="icon-btn" title="Копировать код">📋</button>
+                </div>
+
+                <div class="teams-container">
+                    <div class="team-card red-team">
+                        <h3>🔴 Красные</h3>
+                        <div class="players-list" id="red-team-list"></div>
+                        <button class="join-team-btn" data-team="red">Присоединиться</button>
+                    </div>
+
+                    <div class="team-card blue-team">
+                        <h3>🔵 Синие</h3>
+                        <div class="players-list" id="blue-team-list"></div>
+                        <button class="join-team-btn" data-team="blue">Присоединиться</button>
+                    </div>
+
+                    <div class="team-card spectators">
+                        <h3>👀 Наблюдатели</h3>
+                        <div class="players-list" id="spectators-list"></div>
+                    </div>
+                </div>
+
+                <div class="lobby-controls">
+                    <button id="start-game-btn" class="primary-btn" disabled>Начать игру (мин. 2 vs 2)</button>
+                    <button id="leave-room-btn" class="secondary-btn">Покинуть комнату</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Игровой экран -->
+        <div id="game-screen" class="screen">
+            <div class="game-container">
+                <!-- Верхняя панель -->
+                <div class="game-header">
+                    <div class="room-info">
+                        Комната: <span id="game-room-code"></span>
+                    </div>
+                    <div class="scores">
+                        <div class="score red-score">
+                            🔴 <span id="red-intercepts">0</span> перехват | <span id="red-mistakes">0</span> штраф
+                        </div>
+                        <div class="score blue-score">
+                            🔵 <span id="blue-intercepts">0</span> перехват | <span id="blue-mistakes">0</span> штраф
+                        </div>
+                    </div>
+                    <div class="round-info">
+                        Раунд <span id="current-round">1</span>
+                    </div>
+                </div>
+
+                <!-- Основная область -->
+                <div class="game-main">
+                    <!-- Левая колонка: секретные слова -->
+                    <div class="secrets-column">
+                        <div class="secrets-card" id="red-secrets">
+                            <h4>🔴 Ваши слова (Красные)</h4>
+                            <div class="words-list" id="red-words"></div>
+                        </div>
+                        <div class="secrets-card" id="blue-secrets">
+                            <h4>🔵 Ваши слова (Синие)</h4>
+                            <div class="words-list" id="blue-words"></div>
+                        </div>
+                        <div class="secrets-card spectator-note" id="spectator-note">
+                            <p>👀 Вы наблюдатель. Слова команд скрыты.</p>
+                        </div>
+                    </div>
+
+                    <!-- Центр: игровой процесс -->
+                    <div class="gameplay-column">
+                        <!-- Статус игры -->
+                        <div class="phase-indicator" id="phase-indicator">
+                            Ожидание начала...
+                        </div>
+
+                        <!-- Подсказки текущего раунда -->
+                        <div class="clues-box" id="clues-box">
+                            <h4>Подсказки:</h4>
+                            <div class="clues-display" id="clues-display">
+                                <span class="clue-word">---</span>
+                                <span class="clue-word">---</span>
+                                <span class="clue-word">---</span>
+                            </div>
+                        </div>
+
+                        <!-- Панель шифровальщика -->
+                        <div class="encoder-panel" id="encoder-panel" style="display: none;">
+                            <h4>Вы шифровальщик!</h4>
+                            <p>Зашифруйте код: <strong id="encoder-code"></strong></p>
+                            <div class="clue-inputs">
+                                <input type="text" id="clue1" placeholder="Подсказка 1" maxlength="20">
+                                <input type="text" id="clue2" placeholder="Подсказка 2" maxlength="20">
+                                <input type="text" id="clue3" placeholder="Подсказка 3" maxlength="20">
+                            </div>
+                            <button id="submit-clue-btn" class="primary-btn">Отправить подсказки</button>
+                        </div>
+
+                        <!-- Панель угадывания (для команды противника) -->
+                        <div class="guessing-panel" id="guessing-panel" style="display: none;">
+                            <h4>Угадайте код противника!</h4>
+                            <p>Подсказки: <span id="guessing-clues"></span></p>
+                            <div class="guess-inputs">
+                                <select id="guess1" class="guess-select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                                <select id="guess2" class="guess-select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                                <select id="guess3" class="guess-select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <button id="submit-guess-btn" class="primary-btn">Отправить догадку</button>
+                        </div>
+
+                        <!-- Панель разрешения раунда (для ведущего) -->
+                        <div class="resolve-panel" id="resolve-panel" style="display: none;">
+                            <h4>Завершение раунда</h4>
+                            <p>Своя команда угадала код?</p>
+                            <div class="resolve-buttons">
+                                <button id="resolve-yes" class="success-btn">Да, угадали</button>
+                                <button id="resolve-no" class="danger-btn">Нет, штраф</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правая колонка: лог событий -->
+                    <div class="log-column">
+                        <h4>📋 Лог игры</h4>
+                        <div class="message-log" id="message-log"></div>
+                    </div>
+                </div>
+
+                <div class="history-sidebar">
+                    <h3>📜 История раундов</h3>
+                    <div id="rounds-history" class="rounds-history"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
