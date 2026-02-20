@@ -4,46 +4,7 @@ from .models import (
     GameState, Player, Team, Clue,
     GamePhase, SecretWords
 )
-from datetime import datetime
 from itertools import permutations
-
-
-class RoundHistory:
-    def __init__(self, team: Team, round_num: int, encoder: str, encoder_id: str):
-        self.team = team
-        self.round_num = round_num
-        self.encoder = encoder
-        self.encoder_id = encoder_id
-        self.code = None
-        self.clues = None
-        self.intercepted = False
-        self.intercepted_by = None
-        self.mistake = False  # Штраф своей команды
-        self.own_team_guessed = False  # Своя команда угадала
-        self.round_completed = False
-        self.timestamp = datetime.now().isoformat()
-        self.intercept_given = False  # Был ли уже дан перехват в этом раунде
-
-    def to_dict(self, for_team: Optional[str] = None) -> dict:
-        data = {
-            'team': self.team.value,
-            'round_num': self.round_num,
-            'encoder': self.encoder,
-            'clues': self.clues,
-            'intercepted': self.intercepted,
-            'intercepted_by': self.intercepted_by,
-            'mistake': self.mistake,
-            'own_team_guessed': self.own_team_guessed,
-            'round_completed': self.round_completed,
-            'timestamp': self.timestamp
-        }
-
-        if self.round_completed and for_team == self.team.value:
-            data['code'] = self.code
-        else:
-            data['code'] = None
-
-        return data
 
 
 class DecryptoGame:
@@ -51,9 +12,11 @@ class DecryptoGame:
         self.room_code = room_code
         self.word_bank = word_bank
         self.state = GameState(room_code=room_code)
-        self.rounds_history: List[RoundHistory] = []
-        self.current_round_history: Optional[RoundHistory] = None
         self.all_possible_codes = [list(p) for p in permutations([1, 2, 3, 4], 3)]
+        self.intercept_given_in_current_round = False
+
+        # НОВОЕ: хранилище истории раундов для отображения подсказок
+        self.rounds_history = []  # список завершенных раундов
 
     def add_player(self, player_id: str, nickname: str) -> Player:
         player = Player(id=player_id, nickname=nickname)
@@ -122,6 +85,8 @@ class DecryptoGame:
         self.state.red_mistakes = 0
         self.state.blue_mistakes = 0
 
+        self.rounds_history = []  # очищаем историю при старте новой игры
+
         self.state.phase = GamePhase.ENCODING
         self._next_round()
         self._add_message("🎮 Игра началась! Слова розданы")
@@ -129,6 +94,7 @@ class DecryptoGame:
 
     def _next_round(self):
         self.state.current_round += 1
+        self.intercept_given_in_current_round = False
 
         if self.state.current_round % 2 == 1:
             self.state.current_encoder_team = Team.RED
@@ -156,16 +122,6 @@ class DecryptoGame:
         self.state.current_code = random.choice(self.all_possible_codes)
 
         encoder = self.state.players[self.state.current_encoder_id]
-        self.current_round_history = RoundHistory(
-            team=self.state.current_encoder_team,
-            round_num=team_round,
-            encoder=encoder.nickname,
-            encoder_id=encoder.id
-        )
-        self.current_round_history.code = self.state.current_code
-        self.current_round_history.intercept_given = False
-        self.rounds_history.append(self.current_round_history)
-
         self._add_message(f"▶️ Раунд {team_round} ({team_name}). Шифрует {encoder.nickname}")
 
     def submit_clue(self, player_id: str, clue_words: List[str]) -> bool:
@@ -183,9 +139,6 @@ class DecryptoGame:
             target_code=self.state.current_code,
             round_number=self.state.current_round
         )
-
-        if self.current_round_history:
-            self.current_round_history.clues = clue_words
 
         self.state.phase = GamePhase.GUESSING
 
@@ -226,58 +179,68 @@ class DecryptoGame:
         if result == 'enemy_team_guessed':
             # Противники угадали - даем перехват, но раунд НЕ завершаем
             if is_first_round:
-                # В первом раунде нельзя перехватить
                 self._add_message(f"⚠️ В первом раунде {team_name.lower()} перехват невозможен!")
                 return True
 
-            if self.current_round_history and not self.current_round_history.intercept_given:
-                # Даем перехват только один раз за раунд
-                self.current_round_history.intercept_given = True
-                self.current_round_history.intercepted = True
-                self.current_round_history.intercepted_by = enemy_team.lower()
+            if not self.intercept_given_in_current_round:
+                self.intercept_given_in_current_round = True
 
                 if self.state.current_encoder_team == Team.RED:
                     self.state.blue_intercepts += 1
-                    self._add_message(f"🎯 СИНИЕ перехватили код у красных! (можно дать только 1 перехват за раунд)")
+                    self._add_message(f"🎯 СИНИЕ перехватили код у красных!")
                 else:
                     self.state.red_intercepts += 1
-                    self._add_message(f"🎯 КРАСНЫЕ перехватили код у синих! (можно дать только 1 перехват за раунд)")
+                    self._add_message(f"🎯 КРАСНЫЕ перехватили код у синих!")
 
-                # Проверяем победу после перехвата
                 winner = self._check_winner()
                 if winner:
                     self.state.phase = GamePhase.GAME_OVER
                     self._add_message(f"🏆 {winner} ПОБЕДИЛИ!")
+            else:
+                self._add_message(f"⚠️ В этом раунде уже был перехват!")
 
-            return True  # НЕ завершаем раунд
+            return True
 
         elif result == 'own_team_not_guessed':
-            # Своя команда не угадала - завершаем раунд + штраф
-            if self.current_round_history:
-                self.current_round_history.round_completed = True
-                self.current_round_history.mistake = True
+            # НОВОЕ: сохраняем раунд в историю перед завершением
+            if self.state.current_clue:
+                round_data = {
+                    'team': self.state.current_encoder_team.value,
+                    'round_num': self.state.red_round if self.state.current_encoder_team == Team.RED else self.state.blue_round,
+                    'code': self.state.current_code,
+                    'clues': self.state.current_clue.words,
+                    'completed': True,
+                    'intercept_given': self.intercept_given_in_current_round,
+                    'mistake': True
+                }
+                self.rounds_history.append(round_data)
 
-                if self.state.current_encoder_team == Team.RED:
-                    self.state.red_mistakes += 1
-                    self._add_message(f"❌ Красные не угадали свой код! Штраф. Раунд завершен.")
-                else:
-                    self.state.blue_mistakes += 1
-                    self._add_message(f"❌ Синие не угадали свой код! Штраф. Раунд завершен.")
+            if self.state.current_encoder_team == Team.RED:
+                self.state.red_mistakes += 1
+                self._add_message(f"❌ Красные не угадали свой код! Штраф. Раунд завершен.")
+            else:
+                self.state.blue_mistakes += 1
+                self._add_message(f"❌ Синие не угадали свой код! Штраф. Раунд завершен.")
 
-            # Завершаем раунд
             self._end_current_round()
 
         elif result == 'own_team_guessed':
-            # Своя команда угадала - завершаем раунд без штрафа
-            if self.current_round_history:
-                self.current_round_history.round_completed = True
-                self.current_round_history.own_team_guessed = True
-                self._add_message(f"✅ {team_name} угадали свой код! Раунд завершен.")
+            # НОВОЕ: сохраняем раунд в историю перед завершением
+            if self.state.current_clue:
+                round_data = {
+                    'team': self.state.current_encoder_team.value,
+                    'round_num': self.state.red_round if self.state.current_encoder_team == Team.RED else self.state.blue_round,
+                    'code': self.state.current_code,
+                    'clues': self.state.current_clue.words,
+                    'completed': True,
+                    'intercept_given': self.intercept_given_in_current_round,
+                    'mistake': False
+                }
+                self.rounds_history.append(round_data)
 
-            # Завершаем раунд
+            self._add_message(f"✅ {team_name} угадали свой код! Раунд завершен.")
             self._end_current_round()
 
-        # Проверяем победу после завершения раунда
         winner = self._check_winner()
         if winner:
             self.state.phase = GamePhase.GAME_OVER
@@ -311,18 +274,12 @@ class DecryptoGame:
         if len(self.state.message_log) > 50:
             self.state.message_log.pop(0)
 
-    def get_rounds_history(self, for_player_id: Optional[str] = None) -> List[dict]:
-        if not for_player_id or for_player_id not in self.state.players:
-            return [r.to_dict() for r in self.rounds_history]
-
-        player = self.state.players[for_player_id]
-        player_team = player.team.value if player.team else None
-
-        return [r.to_dict(player_team) for r in self.rounds_history]
-
     def get_state_for_player(self, player_id: str) -> dict:
+        """Возвращает состояние для конкретного игрока"""
         state_dict = self.state.model_dump()
-        state_dict['rounds_history'] = self.get_rounds_history(player_id)
+
+        # НОВОЕ: добавляем историю раундов в состояние
+        state_dict['rounds_history'] = self.rounds_history
 
         if player_id in self.state.players:
             player = self.state.players[player_id]

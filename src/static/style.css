@@ -486,73 +486,6 @@ body {
     border-left: 3px solid #4ecdc4;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .game-main {
-        grid-template-columns: 1fr;
-    }
-
-    .teams-container {
-        grid-template-columns: 1fr;
-    }
-}
-
-.history-sidebar {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 15px;
-    padding: 15px;
-    margin-top: 20px;
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.round-history-item {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 10px;
-}
-
-.round-header.red {
-    color: #ff6b6b;
-    font-weight: bold;
-}
-
-.round-header.blue {
-    color: #4ecdc4;
-    font-weight: bold;
-}
-
-.my-clues {
-    margin-top: 5px;
-    padding: 5px;
-    background: rgba(78, 205, 196, 0.1);
-    border-radius: 5px;
-}
-
-.enemy-clues {
-    margin-top: 5px;
-    padding: 5px;
-    background: rgba(255, 107, 107, 0.1);
-    border-radius: 5px;
-}
-
-.clue-label {
-    font-size: 0.9em;
-    color: #aaa;
-    margin-bottom: 3px;
-}
-
-.clues {
-    font-size: 1.1em;
-}
-
-.intercept {
-    margin-top: 5px;
-    color: #ffd700;
-    font-weight: bold;
-}
-
 .resolve-panel {
     background: rgba(0, 0, 0, 0.3);
     border-radius: 15px;
@@ -618,4 +551,113 @@ body {
     font-size: 0.9em;
     margin-top: 15px;
     font-style: italic;
+}
+
+.hints-history-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.history-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.history-tab-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s;
+}
+
+.history-tab-btn.active {
+    background: #4ecdc4;
+    color: #1e1e2f;
+}
+
+.history-tab-btn:hover {
+    background: rgba(78, 205, 196, 0.3);
+}
+
+.history-team-content {
+    display: none;
+}
+
+.history-team-content.active {
+    display: block;
+}
+
+.history-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.history-column {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 10px;
+    min-height: 200px;
+}
+
+.column-header {
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #4ecdc4;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid rgba(78, 205, 196, 0.3);
+}
+
+.hints-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.history-hint-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    border-left: 3px solid #4ecdc4;
+    animation: fadeIn 0.3s ease;
+}
+
+.history-hint-item .round-number {
+    font-size: 0.8em;
+    color: #aaa;
+    margin-right: 5px;
+}
+
+.history-hint-item .hint-word {
+    font-weight: 500;
+}
+
+.history-hint-item.own-team {
+    border-left-color: #4ecdc4;
+}
+
+.history-hint-item.enemy-team {
+    border-left-color: #ff6b6b;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .history-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

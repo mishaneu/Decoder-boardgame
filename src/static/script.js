@@ -85,6 +85,23 @@ function initElements() {
     elements.ownTeamNotGuessedBtn = document.getElementById('own-team-not-guessed');
     elements.enemyTeamGuessedBtn = document.getElementById('enemy-team-guessed');
 
+    // История подсказок
+    elements.historyTabs = document.querySelectorAll('.history-tab-btn');
+    elements.ownTeamHistory = document.getElementById('own-team-history');
+    elements.enemyTeamHistory = document.getElementById('enemy-team-history');
+
+    // Колонки для своей команды
+    elements.ownHintsCol1 = document.getElementById('own-hints-col1');
+    elements.ownHintsCol2 = document.getElementById('own-hints-col2');
+    elements.ownHintsCol3 = document.getElementById('own-hints-col3');
+    elements.ownHintsCol4 = document.getElementById('own-hints-col4');
+
+    // Колонки для чужой команды
+    elements.enemyHintsCol1 = document.getElementById('enemy-hints-col1');
+    elements.enemyHintsCol2 = document.getElementById('enemy-hints-col2');
+    elements.enemyHintsCol3 = document.getElementById('enemy-hints-col3');
+    elements.enemyHintsCol4 = document.getElementById('enemy-hints-col4');
+
     // Лог
     elements.messageLog = document.getElementById('message-log');
 
@@ -183,6 +200,23 @@ function initEventListeners() {
         elements.clue1.value = '';
         elements.clue2.value = '';
         elements.clue3.value = '';
+    });
+
+    elements.historyTabs.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const team = e.target.dataset.historyTeam;
+
+            elements.historyTabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (team === 'own') {
+                elements.ownTeamHistory.classList.add('active');
+                elements.enemyTeamHistory.classList.remove('active');
+            } else {
+                elements.ownTeamHistory.classList.remove('active');
+                elements.enemyTeamHistory.classList.add('active');
+            }
+        });
     });
 
     // КНОПКИ РЕЗУЛЬТАТОВ
@@ -356,9 +390,8 @@ function updateUI() {
     } else {
         updateGameUI();
     }
-    if (gameState.rounds_history) {
-        displayRoundHistory();
-    }
+    
+    updateHintsHistory();
 }
 
 function updateLobbyUI() {
@@ -522,61 +555,46 @@ function showError(message) {
     }, 3000);
 }
 
-function displayRoundHistory() {
-    if (!gameState || !gameState.rounds_history) {
-        return;
-    }
+function updateHintsHistory() {
+    if (!gameState || !gameState.rounds_history) return;
 
-    const historyContainer = document.getElementById('rounds-history');
-    if (!historyContainer) return;
+    // Очищаем все колонки
+    const ownColumns = [elements.ownHintsCol1, elements.ownHintsCol2, elements.ownHintsCol3, elements.ownHintsCol4];
+    const enemyColumns = [elements.enemyHintsCol1, elements.enemyHintsCol2, elements.enemyHintsCol3, elements.enemyHintsCol4];
 
-    historyContainer.innerHTML = '';
+    ownColumns.forEach(col => col.innerHTML = '');
+    enemyColumns.forEach(col => col.innerHTML = '');
 
-    const sortedHistory = [...gameState.rounds_history].reverse();
-
-    sortedHistory.forEach(round => {
-        if (!round.round_completed) return;
-
-        const roundEl = document.createElement('div');
-        roundEl.className = 'round-history-item';
+    // Проходим по истории раундов
+    gameState.rounds_history.forEach(round => {
+        if (!round.completed || !round.clues || !round.code) return;
 
         const isMyTeamRound = (myTeam === round.team);
-        const teamEmoji = round.team === 'red' ? '🔴' : '🔵';
-        const teamName = round.team === 'red' ? 'Красные' : 'Синие';
+        const teamClass = isMyTeamRound ? 'own-team' : 'enemy-team';
 
-        let html = `<div class="round-header ${round.team}">
-            ${teamEmoji} Раунд ${round.round_num} (${teamName}) - ${round.encoder}
-        </div>`;
+        // Для каждого числа в коде (позиция 1,2,3)
+        round.code.forEach((digit, index) => {
+            const clueWord = round.clues[index];
+            const roundInfo = `Р${round.round_num}`;
 
-        if (round.clues && Array.isArray(round.clues) && round.clues.length === 3) {
-            html += `<div class="clues-section">`;
-            html += `<div class="clue-label">Подсказки:</div>`;
-            html += `<div class="clues">${round.clues[0]} | ${round.clues[1]} | ${round.clues[2]}</div>`;
-            html += `</div>`;
-        }
+            const hintElement = document.createElement('div');
+            hintElement.className = `history-hint-item ${teamClass}`;
+            hintElement.innerHTML = `<span class="round-number">${roundInfo}</span> <span class="hint-word">${clueWord}</span>`;
 
-        if (isMyTeamRound && round.code) {
-            html += `<div class="code-section">`;
-            html += `<div class="code-label">Код:</div>`;
-            html += `<div class="code">${round.code.join('-')}</div>`;
-            html += `</div>`;
-        }
+            // Определяем, в какую колонку добавлять (digit от 1 до 4)
+            const columnIndex = digit - 1;
 
-        if (round.intercepted) {
-            const interceptor = round.intercepted_by === 'red' ? '🔴 Красные' : '🔵 Синие';
-            html += `<div class="intercept-badge">🎯 Перехват команды ${interceptor}!</div>`;
-        }
-
-        if (round.mistake) {
-            const team = round.team === 'red' ? '🔴 Красные' : '🔵 Синие';
-            html += `<div class="mistake-badge">❌ ${team} получили штраф (не угадали свой код)</div>`;
-        }
-
-        if (round.own_team_guessed && !round.mistake && !round.intercepted) {
-            html += `<div class="success-badge">✅ Своя команда угадала код</div>`;
-        }
-
-        roundEl.innerHTML = html;
-        historyContainer.appendChild(roundEl);
+            if (isMyTeamRound) {
+                // Подсказки своей команды (видны всем, но в своей вкладке)
+                if (columnIndex >= 0 && columnIndex < 4) {
+                    ownColumns[columnIndex].appendChild(hintElement.cloneNode(true));
+                }
+            } else {
+                // Подсказки чужой команды (вкладка "Чужая команда")
+                if (columnIndex >= 0 && columnIndex < 4) {
+                    enemyColumns[columnIndex].appendChild(hintElement.cloneNode(true));
+                }
+            }
+        });
     });
 }

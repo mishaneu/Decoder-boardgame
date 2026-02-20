@@ -183,9 +183,57 @@
                     </div>
                 </div>
 
-                <div class="history-sidebar">
-                    <h3>📜 История раундов</h3>
-                    <div id="rounds-history" class="rounds-history"></div>
+                <div class="hints-history-panel">
+                    <div class="history-tabs">
+                        <button class="history-tab-btn active" data-history-team="own">📋 Своя команда</button>
+                        <button class="history-tab-btn" data-history-team="enemy">👀 Чужая команда</button>
+                    </div>
+
+                    <div class="history-content">
+                        <!-- Своя команда -->
+                        <div class="history-team-content active" id="own-team-history">
+                            <div class="history-grid">
+                                <div class="history-column">
+                                    <div class="column-header">1</div>
+                                    <div class="hints-list" id="own-hints-col1"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">2</div>
+                                    <div class="hints-list" id="own-hints-col2"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">3</div>
+                                    <div class="hints-list" id="own-hints-col3"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">4</div>
+                                    <div class="hints-list" id="own-hints-col4"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Чужая команда -->
+                        <div class="history-team-content" id="enemy-team-history">
+                            <div class="history-grid">
+                                <div class="history-column">
+                                    <div class="column-header">1</div>
+                                    <div class="hints-list" id="enemy-hints-col1"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">2</div>
+                                    <div class="hints-list" id="enemy-hints-col2"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">3</div>
+                                    <div class="hints-list" id="enemy-hints-col3"></div>
+                                </div>
+                                <div class="history-column">
+                                    <div class="column-header">4</div>
+                                    <div class="hints-list" id="enemy-hints-col4"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
