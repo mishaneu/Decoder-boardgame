@@ -6,17 +6,19 @@ let myNickname = null;
 let gameState = null;
 let myTeam = null;
 
-// DOM элементы (будем инициализировать после загрузки)
+// DOM элементы
 let elements = {};
 
 // Инициализация после загрузки страницы
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM загружен');
     initElements();
     initEventListeners();
-    checkUrlForRoom();
 });
 
 function initElements() {
+    console.log('Инициализация элементов');
+
     // Экраны
     elements.loginScreen = document.getElementById('login-screen');
     elements.lobbyScreen = document.getElementById('lobby-screen');
@@ -77,21 +79,21 @@ function initElements() {
     elements.clue3 = document.getElementById('clue3');
     elements.submitClueBtn = document.getElementById('submit-clue-btn');
 
-    elements.guessingPanel = document.getElementById('guessing-panel');
-    elements.guessingClues = document.getElementById('guessing-clues');
-    elements.guess1 = document.getElementById('guess1');
-    elements.guess2 = document.getElementById('guess2');
-    elements.guess3 = document.getElementById('guess3');
-    elements.submitGuessBtn = document.getElementById('submit-guess-btn');
-
+    // Панель результатов для шифровальщика
     elements.resolvePanel = document.getElementById('resolve-panel');
-    elements.resolveYes = document.getElementById('resolve-yes');
-    elements.resolveNo = document.getElementById('resolve-no');
+    elements.ownTeamGuessedBtn = document.getElementById('own-team-guessed');
+    elements.ownTeamNotGuessedBtn = document.getElementById('own-team-not-guessed');
+    elements.enemyTeamGuessedBtn = document.getElementById('enemy-team-guessed');
 
+    // Лог
     elements.messageLog = document.getElementById('message-log');
+
+    console.log('Элементы инициализированы');
 }
 
 function initEventListeners() {
+    console.log('Инициализация обработчиков событий');
+
     // Переключение вкладок логина
     elements.tabBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -178,53 +180,57 @@ function initEventListeners() {
             clue_words: [clue1, clue2, clue3]
         });
 
-        // Очищаем поля
         elements.clue1.value = '';
         elements.clue2.value = '';
         elements.clue3.value = '';
     });
 
-    // Отправка догадки
-    elements.submitGuessBtn.addEventListener('click', () => {
-        const guess = [
-            parseInt(elements.guess1.value),
-            parseInt(elements.guess2.value),
-            parseInt(elements.guess3.value)
-        ];
-
-        sendMessage({
-            type: 'make_guess',
-            room_code: roomCode,
-            player_id: playerId,
-            team: myTeam,
-            guess_code: guess
+    // КНОПКИ РЕЗУЛЬТАТОВ
+    if (elements.ownTeamGuessedBtn) {
+        elements.ownTeamGuessedBtn.addEventListener('click', () => {
+            console.log('Кнопка "Своя команда угадала" нажата');
+            sendRoundResult('own_team_guessed');
         });
-    });
+    }
 
-    // Завершение раунда
-    elements.resolveYes.addEventListener('click', () => {
-        console.log('Нажали ДА - своя команда угадала');
-        sendMessage({
-            type: 'confirm_own_guess',  // БЫЛО: 'resolve_round'
-            room_code: roomCode,
-            player_id: playerId,
-            guessed_correctly: true
+    if (elements.ownTeamNotGuessedBtn) {
+        elements.ownTeamNotGuessedBtn.addEventListener('click', () => {
+            console.log('Кнопка "Своя команда не угадала" нажата');
+            sendRoundResult('own_team_not_guessed');
         });
-    });
+    }
 
-    elements.resolveNo.addEventListener('click', () => {
-        console.log('Нажали НЕТ - своя команда НЕ угадала');
-        sendMessage({
-            type: 'confirm_own_guess',  // БЫЛО: 'resolve_round'
-            room_code: roomCode,
-            player_id: playerId,
-            guessed_correctly: false
+    if (elements.enemyTeamGuessedBtn) {
+        elements.enemyTeamGuessedBtn.addEventListener('click', () => {
+            console.log('Кнопка "Противники угадали" нажата');
+            sendRoundResult('enemy_team_guessed');
         });
-    });
+    }
+
+    console.log('Обработчики событий инициализированы');
 }
 
-function checkUrlForRoom() {
-    // Можно добавить логику для URL параметров
+// Функция для отправки результата раунда
+function sendRoundResult(result) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket не подключен');
+        return;
+    }
+
+    if (!roomCode || !playerId) {
+        console.error('Нет roomCode или playerId');
+        return;
+    }
+
+    const message = {
+        type: 'round_result',
+        room_code: roomCode,
+        player_id: playerId,
+        result: result
+    };
+
+    console.log('Отправка результата:', message);
+    socket.send(JSON.stringify(message));
 }
 
 // WebSocket соединение
@@ -232,15 +238,19 @@ function connectAndCreate() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
 
+    console.log('Подключение к:', wsUrl);
+
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
+        console.log('WebSocket открыт, отправка create_room');
         sendMessage({
             type: 'create_room'
         });
     };
 
     socket.onmessage = (event) => {
+        console.log('Получено сообщение:', event.data);
         const data = JSON.parse(event.data);
         handleMessage(data);
     };
@@ -248,15 +258,22 @@ function connectAndCreate() {
     socket.onclose = () => {
         console.log('Соединение закрыто');
     };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+    };
 }
 
 function connectAndJoin() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
 
+    console.log('Подключение к:', wsUrl);
+
     socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
+        console.log('WebSocket открыт, отправка join_room');
         sendMessage({
             type: 'join_room',
             room_code: roomCode,
@@ -265,6 +282,7 @@ function connectAndJoin() {
     };
 
     socket.onmessage = (event) => {
+        console.log('Получено сообщение:', event.data);
         const data = JSON.parse(event.data);
         handleMessage(data);
     };
@@ -272,46 +290,58 @@ function connectAndJoin() {
     socket.onclose = () => {
         console.log('Соединение закрыто');
     };
+
+    socket.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+    };
 }
 
 function sendMessage(message) {
     if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify(message));
+        const jsonMessage = JSON.stringify(message);
+        console.log('Отправка:', jsonMessage);
+        socket.send(jsonMessage);
+    } else {
+        console.error('WebSocket не готов, состояние:', socket?.readyState);
     }
 }
 
 // Обработка сообщений от сервера
 function handleMessage(data) {
-    console.log('Received:', data);
+    console.log('Обработка сообщения:', data);
 
     switch (data.type) {
         case 'room_created':
+            console.log('Комната создана, код:', data.room_code);
             roomCode = data.room_code;
-            connectAndJoin(); // Переподключаемся для входа
+            connectAndJoin();
             break;
 
         case 'joined':
+            console.log('Присоединился к комнате, playerId:', data.player_id);
             playerId = data.player_id;
             roomCode = data.room_code;
             showLobbyScreen();
             break;
 
         case 'state_update':
+            console.log('Обновление состояния');
             gameState = data.state;
             if (data.your_player_id === playerId) {
-                // Определяем свою команду
-                if (gameState.red_team_ids.includes(playerId)) {
+                if (gameState.red_team_ids && gameState.red_team_ids.includes(playerId)) {
                     myTeam = 'red';
-                } else if (gameState.blue_team_ids.includes(playerId)) {
+                } else if (gameState.blue_team_ids && gameState.blue_team_ids.includes(playerId)) {
                     myTeam = 'blue';
                 } else {
                     myTeam = 'spectator';
                 }
+                console.log('Моя команда:', myTeam);
             }
             updateUI();
             break;
 
         case 'error':
+            console.error('Ошибка от сервера:', data.message);
             showError(data.message);
             break;
     }
@@ -321,7 +351,6 @@ function handleMessage(data) {
 function updateUI() {
     if (!gameState) return;
 
-    // Проверяем, на каком мы экране
     if (gameState.phase === 'waiting' || gameState.phase === 'setup') {
         updateLobbyUI();
     } else {
@@ -333,55 +362,49 @@ function updateUI() {
 }
 
 function updateLobbyUI() {
-    // Очищаем списки
     elements.redTeamList.innerHTML = '';
     elements.blueTeamList.innerHTML = '';
     elements.spectatorsList.innerHTML = '';
 
-    // Отображаем код комнаты
     elements.roomCodeDisplay.textContent = roomCode;
 
-    // Заполняем игроков
-    Object.values(gameState.players).forEach(player => {
-        const playerEl = document.createElement('div');
-        playerEl.className = 'player-item';
+    if (gameState.players) {
+        Object.values(gameState.players).forEach(player => {
+            const playerEl = document.createElement('div');
+            playerEl.className = 'player-item';
 
-        let teamList;
-        if (player.team === 'red') {
-            teamList = elements.redTeamList;
-        } else if (player.team === 'blue') {
-            teamList = elements.blueTeamList;
-        } else {
-            teamList = elements.spectatorsList;
-        }
+            let teamList;
+            if (player.team === 'red') {
+                teamList = elements.redTeamList;
+            } else if (player.team === 'blue') {
+                teamList = elements.blueTeamList;
+            } else {
+                teamList = elements.spectatorsList;
+            }
 
-        playerEl.innerHTML = `
-            <span>${player.nickname}</span>
-            ${player.is_encoder ? '<span class="encoder-badge">🎤</span>' : ''}
-        `;
+            playerEl.innerHTML = `
+                <span>${player.nickname}</span>
+                ${player.is_encoder ? '<span class="encoder-badge">🎤</span>' : ''}
+            `;
 
-        teamList.appendChild(playerEl);
-    });
+            teamList.appendChild(playerEl);
+        });
+    }
 
-    // Активируем кнопку старта если достаточно игроков
-    const redCount = gameState.red_team_ids.length;
-    const blueCount = gameState.blue_team_ids.length;
+    const redCount = gameState.red_team_ids ? gameState.red_team_ids.length : 0;
+    const blueCount = gameState.blue_team_ids ? gameState.blue_team_ids.length : 0;
     elements.startGameBtn.disabled = !(redCount >= 2 && blueCount >= 2);
 }
 
 function updateGameUI() {
-    // Показываем игровой экран
     showGameScreen();
 
-    // Обновляем код комнаты
     elements.gameRoomCode.textContent = roomCode;
 
-    // Обновляем счет
     elements.redIntercepts.textContent = gameState.red_intercepts || 0;
     elements.blueIntercepts.textContent = gameState.blue_intercepts || 0;
     elements.redMistakes.textContent = gameState.red_mistakes || 0;
     elements.blueMistakes.textContent = gameState.blue_mistakes || 0;
-
 
     if (gameState.current_encoder_team === 'red') {
         elements.currentRound.textContent = `${gameState.red_round || 0} (🔴 Красные)`;
@@ -391,22 +414,12 @@ function updateGameUI() {
         elements.currentRound.textContent = `${gameState.current_round || 0}`;
     }
 
-    // Показываем секретные слова (только своей команды)
     updateSecretWords();
-
-    // Обновляем фазу игры
     updateGamePhase();
-
-    // Обновляем лог
     updateMessageLog();
-
-    if (gameState.rounds_history) {
-        displayRoundHistory();
-    }
 }
 
 function updateSecretWords() {
-    // Скрываем все карточки слов по умолчанию
     elements.redWords.style.display = 'none';
     elements.blueWords.style.display = 'none';
     elements.spectatorNote.style.display = 'none';
@@ -427,17 +440,14 @@ function updateSecretWords() {
 }
 
 function updateGamePhase() {
-    // Обновляем индикатор фазы
     const phaseText = {
         'encoding': '🔐 Шифрование',
-        'guessing': '🤔 Угадывание',
-        'reveal': '📢 Раскрытие',
+        'guessing': '🤔 Ожидание результатов',
         'game_over': '🏆 Игра окончена'
     };
 
     elements.phaseIndicator.textContent = phaseText[gameState.phase] || gameState.phase;
 
-    // Показываем подсказки если есть
     if (gameState.current_clue) {
         elements.cluesDisplay.innerHTML = gameState.current_clue.words
             .map(word => `<span class="clue-word">${word}</span>`)
@@ -451,31 +461,18 @@ function updateGamePhase() {
         `;
     }
 
-    // Скрываем все панели
     elements.encoderPanel.style.display = 'none';
-    elements.guessingPanel.style.display = 'none';
     elements.resolvePanel.style.display = 'none';
 
-    // Показываем нужную панель в зависимости от фазы и роли
     if (gameState.phase === 'encoding') {
-        // Проверяем, шифровальщик ли я
         if (gameState.current_encoder_id === playerId) {
             elements.encoderPanel.style.display = 'block';
-            elements.encoderCode.textContent = gameState.current_code.join('-');
+            elements.encoderCode.textContent = gameState.current_code ? gameState.current_code.join('-') : '???';
         }
     } else if (gameState.phase === 'guessing') {
-        // Проверяю, могу ли я угадывать (я в команде противника)
-        const encoderTeam = gameState.current_encoder_team;
-        if (myTeam && myTeam !== encoderTeam && myTeam !== 'spectator') {
-            elements.guessingPanel.style.display = 'block';
-            if (gameState.current_clue) {
-                elements.guessingClues.textContent = gameState.current_clue.words.join(' | ');
-            }
-        }
-
-        // ПОКАЗЫВАЕМ ПАНЕЛЬ ЗАВЕРШЕНИЯ РАУНДА ТОЛЬКО ДЛЯ ШИФРОВАЛЬЩИКА
+        // Показываем панель результатов ТОЛЬКО шифровальщику
         if (gameState.current_encoder_id === playerId) {
-            console.log('Показываем панель завершения раунда для шифровальщика');
+            console.log('Показываем панель результатов для шифровальщика');
             elements.resolvePanel.style.display = 'block';
         }
     }
@@ -488,7 +485,6 @@ function updateMessageLog() {
         .map(msg => `<div class="log-message">${msg}</div>`)
         .join('');
 
-    // Скроллим вниз
     elements.messageLog.scrollTop = elements.messageLog.scrollHeight;
 }
 
@@ -536,11 +532,9 @@ function displayRoundHistory() {
 
     historyContainer.innerHTML = '';
 
-    // Показываем историю в обратном порядке
     const sortedHistory = [...gameState.rounds_history].reverse();
 
     sortedHistory.forEach(round => {
-        // Показываем только завершённые раунды
         if (!round.round_completed) return;
 
         const roundEl = document.createElement('div');
@@ -554,7 +548,6 @@ function displayRoundHistory() {
             ${teamEmoji} Раунд ${round.round_num} (${teamName}) - ${round.encoder}
         </div>`;
 
-        // Подсказки (видны всем для завершённых раундов)
         if (round.clues && Array.isArray(round.clues) && round.clues.length === 3) {
             html += `<div class="clues-section">`;
             html += `<div class="clue-label">Подсказки:</div>`;
@@ -562,7 +555,6 @@ function displayRoundHistory() {
             html += `</div>`;
         }
 
-        // Код (виден только своей команде для завершённых раундов)
         if (isMyTeamRound && round.code) {
             html += `<div class="code-section">`;
             html += `<div class="code-label">Код:</div>`;
@@ -570,18 +562,18 @@ function displayRoundHistory() {
             html += `</div>`;
         }
 
-        // Результаты (только для завершённых раундов)
         if (round.intercepted) {
             const interceptor = round.intercepted_by === 'red' ? '🔴 Красные' : '🔵 Синие';
             html += `<div class="intercept-badge">🎯 Перехват команды ${interceptor}!</div>`;
         }
 
-        if (round.own_team_guessed !== null && round.own_team_guessed !== undefined) {
-            if (round.own_team_guessed) {
-                html += `<div class="success-badge">✅ Своя команда угадала</div>`;
-            } else {
-                html += `<div class="mistake-badge">❌ Своя команда НЕ угадала</div>`;
-            }
+        if (round.mistake) {
+            const team = round.team === 'red' ? '🔴 Красные' : '🔵 Синие';
+            html += `<div class="mistake-badge">❌ ${team} получили штраф (не угадали свой код)</div>`;
+        }
+
+        if (round.own_team_guessed && !round.mistake && !round.intercepted) {
+            html += `<div class="success-badge">✅ Своя команда угадала код</div>`;
         }
 
         roundEl.innerHTML = html;

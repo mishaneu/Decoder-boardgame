@@ -552,3 +552,70 @@ body {
     color: #ffd700;
     font-weight: bold;
 }
+
+.resolve-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.resolve-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.resolve-btn {
+    flex: 1;
+    min-width: 180px;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.resolve-btn.own-team-guessed {
+    background: #4ecdc4;
+    color: #1e1e2f;
+}
+
+.resolve-btn.own-team-not-guessed {
+    background: #ff6b6b;
+    color: #fff;
+}
+
+.resolve-btn.enemy-team-guessed {
+    background: #ffd93d;
+    color: #1e1e2f;
+}
+
+.resolve-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.resolve-btn.own-team-guessed:hover {
+    box-shadow: 0 5px 20px rgba(78, 205, 196, 0.4);
+}
+
+.resolve-btn.own-team-not-guessed:hover {
+    box-shadow: 0 5px 20px rgba(255, 107, 107, 0.4);
+}
+
+.resolve-btn.enemy-team-guessed:hover {
+    box-shadow: 0 5px 20px rgba(255, 217, 61, 0.4);
+}
+
+.resolve-note {
+    color: #aaa;
+    font-size: 0.9em;
+    margin-top: 15px;
+    font-style: italic;
+}

@@ -165,12 +165,14 @@
 
                         <!-- Панель разрешения раунда (для ведущего) -->
                         <div class="resolve-panel" id="resolve-panel" style="display: none;">
-                            <h4>Завершение раунда</h4>
-                            <p>Своя команда угадала код?</p>
+                            <h4>🎤 Результаты раунда</h4>
+                            <p>Какой исход?</p>
                             <div class="resolve-buttons">
-                                <button id="resolve-yes" class="success-btn">Да, угадали</button>
-                                <button id="resolve-no" class="danger-btn">Нет, штраф</button>
+                                <button id="own-team-guessed" class="resolve-btn own-team-guessed">✅ Своя команда угадала</button>
+                                <button id="own-team-not-guessed" class="resolve-btn own-team-not-guessed">❌ Своя команда не угадала</button>
+                                <button id="enemy-team-guessed" class="resolve-btn enemy-team-guessed">🎯 Противники угадали</button>
                             </div>
+                            <p class="resolve-note">Обсудите результат в голосовом чате и выберите вариант</p>
                         </div>
                     </div>
 
